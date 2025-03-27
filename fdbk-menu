@@ -100,15 +100,15 @@ main=({
 			//LayerShell.init_for_window(win),
 			//LayerShell.set_layer(win,LayerShell.Layer.TOP),
 			//LayerShell.set_keyboard_mode(win,LayerShell.KeyboardMode.EXCLUSIVE),
-			ul.set_filter_func((w,s=sinp.text.toLowerCase())=>(
-				w.p=Object.entries(w.x.keywords).reduce((a,[i,x])=>(
+			ul.set_filter_func((w,s=sinp.text.toLowerCase(),ss=new RegExp(`\\s${s}`))=>(
+				w.p=s?Object.entries(w.x.keywords).reduce((a,[i,x])=>(
 					x.reduce((a,x)=>x?(
 						x=x.toLowerCase(),
 						a||x.includes(s)&&a++,// base point to display
-						a&&a+i*x.startsWith(s)/(Math.abs(s.length-x.length)+1)// match point
+						a&&a+i*(+x.startsWith(s)||.5*ss.test(x))/(Math.abs(s.length-x.length)+1)// match point
 					):a,a)
-				),0),
-				w.opacity=1-1/w.p,
+				),0):Infinity,
+				w.opacity=w.p/3,
 				w.child.get_last_child().set_label(`:${w.p}`),
 				w.p
 			)),
