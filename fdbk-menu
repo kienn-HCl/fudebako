@@ -1,17 +1,34 @@
 #!/bin/gjs -m
 //#!/usr/bin/env -S LD_PRELOAD=/usr/lib/libgtk4-layer-shell.so gjs -m
-//import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk?version=4.0';
 import Gdk from 'gi://Gdk?version=4.0';
 //import LayerShell from 'gi://Gtk4LayerShell';
 
-//console.log(GLib.getenv('XDG_CURRENT_DESKTOP'));
-/*[...GLib.get_system_data_dirs(),GLib.get_user_data_dir()].map(x=>(
-	x.endsWith('/')||(x+='/'),
-	x+='applications'
-));*/
+/*
+
+{
+	icon?:Gtk.Icon,
+	txt:String,
+	exec:Function,
+	menu?:[
+		{
+			txt:String,
+			exec:Function
+		},
+		...
+	],
+	keywords:{
+		[weight<Number>]:[
+			keyword<String>
+		],
+		...
+	}
+}
+
+
+	*/
 
 const
 drun=({
@@ -26,18 +43,22 @@ drun=({
 			txt:x.get_action_name(y),
 			exec:_=>x.launch_action(y,new Gio.AppLaunchContext())
 		})),
-		keywords:[...new Set([
-			x.get_display_name(),
-			x.get_executable().split('/').at(-1),
-			x.get_description(),
-			...(x.get_categories()??'').split(';'),
-			...x.get_keywords()??[],
-			x.get_generic_name()
-		].filter(x=>x).map(x=>x.toLowerCase()))]
+		keywords:{
+			16:[
+				x.get_display_name(),
+				x.get_generic_name()
+			],
+			8:[x.get_executable().split('/').at(-1)],
+			1:[
+				x.get_description(),
+				...(x.get_categories()??'').split(';'),
+				...x.get_keywords()??[]
+			]
+		}
 	}
 )),
-bench=(n=10000)=>(
-	n=[...Array(n)].map(_=>(_=Math.random()+'',{txt:_,keywords:[_]})),
+bench=(n=1000)=>(
+	n=[...Array(n)].map(_=>(_=Math.random()+'',{txt:_,keywords:{1:[_]}})),
 	console.log('rand done'),
 	n
 ),
@@ -80,21 +101,23 @@ main=({
 			//LayerShell.set_layer(win,LayerShell.Layer.TOP),
 			//LayerShell.set_keyboard_mode(win,LayerShell.KeyboardMode.EXCLUSIVE),
 			ul.set_filter_func((w,s=sinp.text.toLowerCase())=>(
-				w.b=w.x.keywords.some(x=>x.includes(s)),
-				w.p=w.b?
-					+16*w.x.txt.toLowerCase().startsWith(s)
-					+2*w.x.keywords.some(x=>x.startsWith(s))
-					-Math.abs(s.length-w.x.txt.length)
-					:-Infinity,
-				w.child.get_last_child().set_label('+'+w.p),
-				w.b
+				w.p=Object.entries(w.x.keywords).reduce((a,[i,x])=>(
+					x.reduce((a,x)=>x?(
+						x=x.toLowerCase(),
+						a||x.includes(s)&&a++,// base point to display
+						a&&a+i*x.startsWith(s)/(Math.abs(s.length-x.length)+1)// match point
+					):a,a)
+				),0),
+				w.opacity=1-1/w.p,
+				w.child.get_last_child().set_label(`:${w.p}`),
+				w.p
 			)),
 			ul.set_sort_func((a,b)=>Math.sign(b.p-a.p)),
 			sinp.connect('search-changed',_=>(
 				ul.invalidate_filter(),
 				ul.invalidate_sort(),
 				ul.select_child(ul.get_child_at_index(0)),
-				console.log(ul.get_selected_children()),
+				//console.log(ul.get_selected_children()),
 				0
 			)),
 			items.forEach(x=>ul.append(((
@@ -110,10 +133,10 @@ main=({
 				box.append(new Gtk.Label),
 				x.menu&&(li.tooltip_text=x.menu.map(x=>x.txt).join('\n')),
 				li.x=x,
-				li.connect('activate',_=>li.b&&(x.exec(),win.close())),
+				li.connect('activate',_=>li.p&&(x.exec(),win.close())),
 				li
 			))())),
-			sinp.connect('activate',w=>(w=ul.get_selected_children()[0])&&w.b&&(w.x.exec(),win.close())),
+			sinp.connect('activate',w=>(w=ul.get_selected_children()[0])&&w.p&&(w.x.exec(),win.close())),
 			sinp.add_controller(esc()),
 			sbtn.bind_property('active',sbar,'search-mode-enabled',GObject.BindingFlags.BIDIRECTIONAL),
 
@@ -131,5 +154,5 @@ main=({
 ))();
 
 //console.log(drun());
-//main({title:'launch...',items:drun});
+//main({title:'launch...',items:bench()});
 main({title:'launch...',items:drun()});
