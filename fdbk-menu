@@ -109,7 +109,7 @@ main=({
 					):a,a)
 				),0):Infinity,
 				w.opacity=w.p/3,
-				w.child.get_last_child().set_label(`:${w.p}`),
+				w.child.get_last_child().set_label(w.p.toFixed(1)),
 				w.p
 			)),
 			ul.set_sort_func((a,b)=>Math.sign(b.p-a.p)),
@@ -130,7 +130,7 @@ main=({
 					box.append(x)
 				))(x.icon),
 				box.append(new Gtk.Label({label:x.txt})),
-				box.append(new Gtk.Label),
+				box.append(new Gtk.Label({hexpand:true,xalign:1})),
 				x.menu&&(li.tooltip_text=x.menu.map(x=>x.txt).join('\n')),
 				li.x=x,
 				li.connect('activate',_=>li.p&&(x.exec(),win.close())),
