@@ -1,7 +1,7 @@
 pkgname=fudebako
 pkgver=0.0.1
 pkgrel=1
-pkgdesc="A Gtk(GJS) based desktop shells"
+pkgdesc="A GTK4 (GJS) based desktop shells"
 arch=('any')
 url="https://github.com/mcbeeringi/fudebako"
 license=('MIT')
