@@ -9,10 +9,14 @@ depends=('gtk4' 'gjs')
 optdepends=('gtk4-layer-shell')
 source=(
 	"LICENSE"
-	"fudebako-menu"
+	"fdbk-menu"
+)
+sha256sums=(
+	"SKIP"
+	"SKIP"
 )
 
 package() {
-	cd "$pkgname-$pkgver"
-	install -Dm755 "fbdk-menu" "${pkgdir}/usr/bin/fdbk-menu"
+	# cd "$pkgname-$pkgver"
+	install -Dm755 "${srcdir}/fdbk-menu" "${pkgdir}/usr/bin/fdbk-menu"
 }
