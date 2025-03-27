@@ -1,21 +1,25 @@
 #!/bin/gjs -m
 //#!/usr/bin/env -S LD_PRELOAD=/usr/lib/libgtk4-layer-shell.so gjs -m
+//import Gettext,{gettext as _} from 'gettext';
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=4.0';
 import Gdk from 'gi://Gdk?version=4.0';
 //import LayerShell from 'gi://Gtk4LayerShell';
+//Gettext.textdomain('gtk40');
+
 
 /*
 
 {
 	icon?:Gtk.Icon,
 	txt:String,
-	exec:Function,
+	exec:Function(Gtk.Window),
 	menu?:[
 		{
 			txt:String,
-			exec:Function
+			exec:Function(Gtk.Window)
 		},
 		...
 	],
@@ -38,7 +42,10 @@ drun=({
 	{
 		icon:x.get_icon()??ico,
 		txt:x.get_display_name(),
-		exec:_=>x.launch([],new Gio.AppLaunchContext()),
+		exec:w=>{
+			try{x.launch([],new Gio.AppLaunchContext());}
+			catch(e){new Gtk.AlertDialog({message:e.message}).show(w);return 1;}
+		},
 		menu:x.list_actions().map(y=>({
 			txt:x.get_action_name(y),
 			exec:_=>x.launch_action(y,new Gio.AppLaunchContext())
@@ -133,10 +140,10 @@ main=({
 				box.append(new Gtk.Label({hexpand:true,xalign:1})),
 				x.menu&&(li.tooltip_text=x.menu.map(x=>x.txt).join('\n')),
 				li.x=x,
-				li.connect('activate',_=>li.p&&(x.exec(),win.close())),
+				li.connect('activate',_=>li.p&&(x.exec(win)||win.close())),
 				li
 			))())),
-			sinp.connect('activate',w=>(w=ul.get_selected_children()[0])&&w.p&&(w.x.exec(),win.close())),
+			sinp.connect('activate',w=>(w=ul.get_selected_children()[0])&&w.p&&(w.x.exec(win)||win.close())),
 			sinp.add_controller(esc()),
 			sbtn.bind_property('active',sbar,'search-mode-enabled',GObject.BindingFlags.BIDIRECTIONAL),
 
