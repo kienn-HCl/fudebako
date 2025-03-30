@@ -128,7 +128,7 @@ main=({
 			//LayerShell.set_layer(win,LayerShell.Layer.TOP),
 			//LayerShell.set_keyboard_mode(win,LayerShell.KeyboardMode.EXCLUSIVE),
 			ul.bind_model(lm,(
-				w,x=w.x,i=w.i,
+				{x,i,p},
 				box=new Gtk.Box,
 				li=new Gtk.FlowBoxChild({child:box})
 			)=>(
@@ -138,9 +138,9 @@ main=({
 					box.append(x)
 				))(x.icon),
 				box.append(new Gtk.Label({label:x.txt})),
-				box.append(new Gtk.Label({hexpand:true,xalign:1,label:w.p+''})),
+				box.append(new Gtk.Label({hexpand:true,xalign:1,label:p+''})),
 				x.menu&&(li.tooltip_text=x.menu.map(x=>x.txt).join('\n')),
-				li.x=x,li.i=i,li.p=w.p,
+				Object.assign(li,{x,i,p}),
 				li.connect('activate',_=>li.p&&(x.exec(win)||win.close())),
 				li
 			)),
@@ -149,7 +149,7 @@ main=({
 			)),
 			sinp.connect('activate',w=>(w=ul.get_child_at_index(0))&&w.p&&(w.x.exec(win)||win.close())),
 
-			sinp.add_controller(esc()),
+			// sinp.add_controller(esc()),
 			sbtn.bind_property('active',sbar,'search-mode-enabled',GObject.BindingFlags.BIDIRECTIONAL),
 
 			hbar.pack_start(sbtn),
