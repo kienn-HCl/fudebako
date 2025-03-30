@@ -29,16 +29,30 @@
         {
           devShells.default = pkgs.mkShell {
             packages = with pkgs; [
+              gjs
+              gobject-introspection
+              wrapGAppsHook4
             ];
           };
-          packages.default = mkApplication {
+          packages.default = pkgs.stdenv.mkDerivation {
+            pname = "fdbk-menu";
+            name = "fudebako";
+            src = ./.;
+            nativeBuildInputs = with pkgs; [
+              gobject-introspection
+              wrapGAppsHook4
+            ];
+            buildInputs = with pkgs; [
+              gjs
+            ];
+            installPhase = ''
+              install -Dm755 "$src/fdbk-menu" "$out/bin/fdbk-menu"
+            '';
           };
           treefmt = {
             projectRootFile = "flake.nix";
             programs = {
               nixfmt.enable = true;
-              ruff.check = true;
-              ruff.format = true;
             };
           };
         };
