@@ -33,6 +33,10 @@ to show desktop apps
 ### run
 Run without installing.
 ```sh
+nix run
+```
+or if you have not cloned this repository,
+```sh
 nix run github:McbeEringi/fudebako#
 ```
 
@@ -49,3 +53,9 @@ $ nix develop
 $ ./fdbk-menu # success
 ```
 
+### build
+You can build this command.
+```sh
+nix build
+```
+In `result` directory, artifacts are created.
