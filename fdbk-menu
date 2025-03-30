@@ -64,8 +64,8 @@ drun=({
 		}
 	}
 )),
-bench=(n=1000)=>(
-	n=[...Array(n)].map(_=>(_=Math.random()+'',{txt:_,keywords:{1:[_]}})),
+bench=(n=100000)=>(
+	n=[...Array(n)].map(_=>(_=Math.random().toFixed(6),{txt:_,keywords:{1:[_]}})),
 	console.log('rand done'),
 	n
 ),
@@ -74,7 +74,7 @@ bench=(n=1000)=>(
 main=({
 	title='fdbk-menu',
 	defaultWidth=480,defaultHeight=480,
-	items=_=>[]
+	items=[]
 }={})=>((
 	app=new Gtk.Application({application_id:'dev.mcbeeringi.fudebako',flags:Gio.ApplicationFlags.NON_UNIQUE})
 )=>(
@@ -83,7 +83,7 @@ main=({
 			box=new Gtk.Box({orientation:Gtk.Orientation.VERTICAL}),
 			hbar=new Gtk.HeaderBar,
 			win=new Gtk.ApplicationWindow({
-						application:app,child:box,
+				application:app,child:box,
 				title,
 				titlebar:hbar,
 				//decorated:false,
@@ -95,7 +95,7 @@ main=({
 			ul=new Gtk.FlowBox({
 				max_children_per_line:1,
 				homogeneous:true,
-				selection_mode:Gtk.SelectionMode.BROWSE,
+				selection_mode:Gtk.SelectionMode.SINGLE,
 				valign:Gtk.Align.START,
 			}),
 			scr=new Gtk.ScrolledWindow({vexpand:true,child:ul}),
@@ -103,31 +103,32 @@ main=({
 				key.connect('key-pressed',(_,k)=>k==Gdk.KEY_Escape&&win.close()),
 				key
 			))(new Gtk.EventControllerKey),
+			lm=new Gtk.SortListModel({
+				sorter:Gtk.CustomSorter.new((a,b)=>Math.sign(b.p-a.p)),
+				incremental:true,
+				model:new Gtk.FilterListModel({
+					filter:Gtk.CustomFilter.new((w,s=sinp.text.toLowerCase(),ss=new RegExp(`\\s${s}`))=>(
+						w.p=s?Object.entries(w.x.keywords).reduce((a,[i,x])=>(
+							x.reduce((a,x)=>x?(
+								x=x.toLowerCase(),
+								a||x.includes(s)&&a++,// base point to display
+								a&&a+i*(+x.startsWith(s)||.5*ss.test(x))/(Math.abs(s.length-x.length)+1)// match point
+							):a,a)
+						),0):-w.i-1,//Infinity,
+						w.p
+					)),
+					incremental:true,
+					model:items.reduce((a,x,i)=>(
+						a.append(Object.assign(new GObject.Object,{x,i})),a
+					),new Gio.ListStore),
+				})
+			}),
 		)=>(
 			//LayerShell.init_for_window(win),
 			//LayerShell.set_layer(win,LayerShell.Layer.TOP),
 			//LayerShell.set_keyboard_mode(win,LayerShell.KeyboardMode.EXCLUSIVE),
-			ul.set_filter_func((w,s=sinp.text.toLowerCase(),ss=new RegExp(`\\s${s}`))=>(
-				w.p=s?Object.entries(w.x.keywords).reduce((a,[i,x])=>(
-					x.reduce((a,x)=>x?(
-						x=x.toLowerCase(),
-						a||x.includes(s)&&a++,// base point to display
-						a&&a+i*(+x.startsWith(s)||.5*ss.test(x))/(Math.abs(s.length-x.length)+1)// match point
-					):a,a)
-				),0):Infinity,
-				w.opacity=w.p/3,
-				w.child.get_last_child().set_label(w.p.toFixed(1)),
-				w.p
-			)),
-			ul.set_sort_func((a,b)=>Math.sign(b.p-a.p)),
-			sinp.connect('search-changed',_=>(
-				ul.invalidate_filter(),
-				ul.invalidate_sort(),
-				ul.select_child(ul.get_child_at_index(0)),
-				//console.log(ul.get_selected_children()),
-				0
-			)),
-			items.forEach(x=>ul.append(((
+			ul.bind_model(lm,(
+				{x,i,p},
 				box=new Gtk.Box,
 				li=new Gtk.FlowBoxChild({child:box})
 			)=>(
@@ -137,14 +138,18 @@ main=({
 					box.append(x)
 				))(x.icon),
 				box.append(new Gtk.Label({label:x.txt})),
-				box.append(new Gtk.Label({hexpand:true,xalign:1})),
+				box.append(new Gtk.Label({hexpand:true,xalign:1,label:p+''})),
 				x.menu&&(li.tooltip_text=x.menu.map(x=>x.txt).join('\n')),
-				li.x=x,
+				Object.assign(li,{x,i,p}),
 				li.connect('activate',_=>li.p&&(x.exec(win)||win.close())),
 				li
-			))())),
-			sinp.connect('activate',w=>(w=ul.get_selected_children()[0])&&w.p&&(w.x.exec(win)||win.close())),
-			sinp.add_controller(esc()),
+			)),
+			sinp.connect('search-changed',_=>(
+				lm.model.filter.changed(Gtk.FilterChange.DIFFERENT)
+			)),
+			sinp.connect('activate',w=>(w=ul.get_child_at_index(0))&&w.p&&(w.x.exec(win)||win.close())),
+
+			// sinp.add_controller(esc()),
 			sbtn.bind_property('active',sbar,'search-mode-enabled',GObject.BindingFlags.BIDIRECTIONAL),
 
 			hbar.pack_start(sbtn),
@@ -161,5 +166,5 @@ main=({
 ))();
 
 //console.log(drun());
-//main({title:'launch...',items:bench()});
+// main({title:'launch...',items:bench()});
 main({title:'launch...',items:drun()});
